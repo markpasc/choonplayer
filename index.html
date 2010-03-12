@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html><head>
+    <meta charset="utf-8">
+    <title>Choonplayer</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+    <link rel="stylesheet" type="text/css" href="text.css">
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+    <style type="text/css">
+    body {
+        background: #002884;
+        color: white;
+        height: 100%;
+    }
+    #hi {
+        position: absolute;
+        width: 500px;
+    }
+    h1 {
+        font-family: Helvetica;
+        font-size: 4em;
+        font-weight: bold;
+        letter-spacing: -0.1em;
+        line-height: 0.95em;
+        text-transform: lowercase;
+        margin: 0;
+    }
+    </style>
+</head><body>
+
+    <div id="hi">
+        <h1 id="title"></h1>
+        <div id="player"></div>
+        <p>&larr; <a href="#" id="play-next">&rarr;</a></p>
+    </div>
+
+    <script type="text/javascript">
+    $.fn.centerize = function () {
+        var ph = $(document).height();
+        var pw = $(document).width();
+        return this.each(function (i) {
+            var ah = $(this).height();
+            var aw = $(this).width();
+            var mh = (ph - ah) / 2;
+            var mw = (pw - aw) / 2;
+            $(this).css({
+                top: mh,
+                left: mw
+            });
+        });
+    };
+
+    $(document).resize(function () {
+        $('#hi').centerize();
+    });
+
+    var entries = new Array();
+
+    function playentry() {
+        console.log('Looking for a new entry');
+        $('#player').empty();
+        $('<div/>').attr('id', 'player-inner').appendTo($('#player'));
+
+        var entry = entries.shift();
+        if (!entry)
+            return;  // DONE
+
+        console.log('Yay gonna play ' + entry['title']);
+        $('#title').text(entry['title']);
+        var content = entry['content'];
+
+        var videourl;
+        if (videourl = content.match(new RegExp('http://www\.youtube\.com/v/[\\w-]+'))) {
+            videourl += '?enablejsapi=1&version=3';
+            swfobject.embedSWF(videourl, 'player-inner', '425', '356', '8',
+                null, null,
+                { allowScriptAccess: 'always' },
+                { id: 'youtubeplayer' });
+        }
+        else if (videourl = content.match(new RegExp('http://vimeo.com/moogaloop\.swf'))) {
+            var clipid = content.match(new RegExp('clip_id=(\\d+)'));
+            console.log('wewt clipid ' + clipid[1]);
+
+            swfobject.embedSWF(videourl, 'player-inner', '504', '340', '9',
+                null,
+                {
+                    clip_id: clipid[1],
+                    show_portrait: 1,
+                    show_byline: 1,
+                    show_title: 1,
+                    js_api: 1, // required in order to use the Javascript API
+                    js_onLoad: 'vimeo_player_loaded', // moogaloop will call this JS function when it's done loading (optional)
+                    js_swf_id: 'moogaloop'
+                },
+                { allowScriptAccess: 'always' },
+                { id: 'moogaloop' })
+        }
+        else {
+            playentry();
+        }
+
+        $('#hi').centerize();
+    }
+
+    function onYouTubePlayerReady(playerid) {
+        var ytp = document.getElementById('youtubeplayer');
+        ytp.addEventListener('onStateChange', 'onYouTubePlayerStateChange');
+        ytp.addEventListener('onError', 'onYouTubePlayerError');
+        ytp.playVideo();
+    }
+
+    function onYouTubePlayerError(err) {
+        // whatevs
+        playentry();
+    }
+
+    function onYouTubePlayerStateChange(state) {
+        console.log('PLAYER STATE ' + state);
+        if (state == 2) {
+            var ytp = document.getElementById('youtubeplayer');
+            if (ytp.getCurrentTime() >= ytp.getDuration()) {
+                playentry();
+            }
+        }
+    }
+
+    function vimeo_player_loaded(swfid) {
+        console.log('O HAI VIMEO ' + swfid);
+        var mooga = document.getElementById(swfid);
+        mooga.api_addEventListener('onFinish', 'vimeo_on_finish');
+        mooga.api_play();
+    }
+
+    function vimeo_on_finish(swfid) {
+        console.log('WHEE VIMEO FINISH ' + swfid);
+        playentry();
+    }
+
+    $(document).ready(function () {
+
+        $('#play-next').click(function () {
+            playentry();
+            return false;
+        });
+
+        var skip = document.location.hash || '#1';
+        skip = skip.substring(1);
+
+        $.ajax({
+            dataType: 'jsonp',
+            url: 'http://api.typepad.com/blogs/6a010535d296d4970b012875dab638970c/post-assets.js',
+            data: {
+                'start-index': skip
+            },
+            success: function (data) {
+                entries = data['entries'];
+                playentry();
+            }
+        });
+
+    });
+    </script>
+
+</body></html>
