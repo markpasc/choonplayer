@@ -31,6 +31,13 @@
         text-transform: lowercase;
         margin: 0;
     }
+    a:link, a:hover, a:visited, a:active {
+        color: white;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
     </style>
 </head><body>
 
@@ -39,7 +46,7 @@
     </div>
 
     <div id="hi">
-        <h1 id="title"></h1>
+        <h1><a href="#" target="_new" id="title"></a></h1>
         <div id="player"></div>
         <p>&larr; <a href="#" id="play-next">&rarr;</a></p>
     </div>
@@ -76,7 +83,8 @@
             return;  // DONE
 
         console.log('Yay gonna play ' + entry['title']);
-        $('#title').text(entry['title']);
+        $('#title').text(entry['title']).attr('href', entry['permalinkUrl']);
+        document.title = entry['title'] + ' on Choon';
         var content = entry['content'];
 
         var videourl;
