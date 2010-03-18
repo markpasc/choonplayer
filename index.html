@@ -52,6 +52,8 @@
     </div>
 
     <script type="text/javascript">
+    var blog_xid = '6a010535d296d4970b012875dab638970c';
+
     $.fn.centerize = function () {
         var ph = $(document).height();
         var pw = $(document).width();
@@ -166,7 +168,7 @@
 
         $.ajax({
             dataType: 'jsonp',
-            url: 'http://api.typepad.com/blogs/6a010535d296d4970b012875dab638970c/post-assets.js',
+            url: 'http://api.typepad.com/blogs/' + blog_xid + '/post-assets.js',
             data: {
                 'start-index': skip
             },
